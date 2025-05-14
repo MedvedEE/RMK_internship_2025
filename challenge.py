@@ -32,7 +32,13 @@ def fetch_and_filter_data():
             header=None,
             names=columns
         )
-        print(df.head())
+        #print(df.head())
+        # Filter only busses
+        df = df[df['transport_type'] == 2]
+        df = df[df["line_number"] == "8"]        
+        #print(df.head())
+        for index, row in df.iterrows():
+            print(f"Row {index}: {row.to_dict()}")
     else:
         print(f"Failed to fetch data: {response.status_code}")
         return None
