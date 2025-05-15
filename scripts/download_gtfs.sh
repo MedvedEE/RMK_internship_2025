@@ -10,7 +10,7 @@
 
 
 # Defining variables
-DATA_DIR="../data"  # So because data is in the parent directory, we use ../data
+DATA_DIR="/home/medved/repos/RMK_internship_2025/data"  # Directory, where data is stored
 YESTERDAY=$(date -d "yesterday" +"%d-%m-%Y")  # Because peatus.ee gives data for yesterday, we're using date for yesterday
 YESTERDAY_DIR="$DATA_DIR/$YESTERDAY"
 GTFS_URL="http://peatus.ee/gtfs/gtfs.zip"
