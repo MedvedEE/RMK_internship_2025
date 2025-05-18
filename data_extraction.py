@@ -34,6 +34,34 @@ def filter_trip_ids(file_path):
     return matching_trip_ids
 
 
+def extract_stop_ids(file_path):
+    """
+    Extract stop IDs for 'Zoo' and 'Toompark' from a CSV file.
+
+    Args:
+        file_path (str): Path to the CSV file containing stop data.
+
+    Returns:
+        tuple: A tuple containing two lists: zoo_stop_ids and toompark_stop_ids.
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+    """    
+    zoo_stop_ids = []
+    toompark_stop_ids = []
+    try:
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if (row['stop_name'] == 'Zoo'):
+                    zoo_stop_ids.append(row['stop_id'])
+                elif (row['stop_name'] == 'Toompark'):
+                    toompark_stop_ids.append(row['stop_id'])
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+    return zoo_stop_ids, toompark_stop_ids
+
+
+
 def main():
     """
     Main function to execute the script.
@@ -42,9 +70,21 @@ def main():
     # Set the path to the CSV file
     base_dir = os.path.dirname(os.path.abspath(__file__))
     trips_path = os.path.join(base_dir,'data', 'trips.txt')
+    stops_path = os.path.join(base_dir,'data', 'stops.txt')
 
-    matching_ids = filter_trip_ids(trips_path)
-    print(f"Found {len(matching_ids)} matching trip IDs")
+    # Check if the file exists
+    for file_path in [trips_path, stops_path]:
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            return
+
+    trip_ids = filter_trip_ids(trips_path)
+    print(f"Found {len(trip_ids)} matching trip IDs")
+    
+    print("Finding Zoo and Toompark stop IDs")
+    zoo_stop_ids, toompark_stop_ids = extract_stop_ids(stops_path)
+    print(f"Zoo stop IDs: {zoo_stop_ids}")
+    print(f"Toompark stop IDs: {toompark_stop_ids}")
 
 if __name__ == "__main__":
     main()
