@@ -7,7 +7,7 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 """
 import csv
 import os
-
+from datetime import datetime
 
 
 def filter_trip_ids(file_path):
@@ -60,7 +60,73 @@ def extract_stop_ids(file_path):
         print(f"File not found: {file_path}")
     return zoo_stop_ids, toompark_stop_ids
 
+def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids):
+    """
+    Find trips that go from Zoo to Toompark.
+    Then calculate their travel time from Zoo to Toompark
+    
+    Args:
+        stop_times_path (str): stop_times.txt file path
+        zoo_stop_ids (str): Zoo stop IDs
+        toompark_stop_ids (str): Toompark stop IDs
 
+    Returns:
+        list: A list of dictionaries containing trip information, including trip ID, stop IDs, and travel time.
+    """
+    
+    trips = {}
+    
+    # Read stop_times.txt and group by trip_id
+    with open(stop_times_path, mode='r', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            trip_id = row['trip_id']
+            if trip_id not in trips:
+                trips[trip_id] = []
+            # Saving every stop info
+            trips[trip_id].append({
+                'stop_id': row['stop_id'],
+                'arrival_time': row['arrival_time'],
+                'departure_time': row['departure_time'],
+                'stop_sequence': int(row['stop_sequence'])
+            })
+
+    results = []
+    
+    # Start analyzing every trip
+    for trip_id, stops in trips.items():
+        # Finding all Zoo stops
+        zoo_stops = [s for s in stops if s['stop_id'] in zoo_stop_ids]
+        # Finding all Toompark stops
+        toompark_stops = [s for s in stops if s['stop_id'] in toompark_stop_ids]
+        
+        # If there are both Zoo and Toompark stops, we can calculate the time difference
+        if zoo_stops and toompark_stops:
+            first_zoo = zoo_stops[0]
+            # Toompark stops that come after the first Zoo stop
+            subsequent_toompark = [s for s in toompark_stops 
+                                 if s['stop_sequence'] > first_zoo['stop_sequence']]
+            
+            if subsequent_toompark:
+                first_toompark = subsequent_toompark[0]
+                # Calculate the time difference
+                time_format = "%H:%M:%S"
+                zoo_time = datetime.strptime(first_zoo['departure_time'], time_format)
+                toompark_time = datetime.strptime(first_toompark['arrival_time'], time_format)
+                time_diff = (toompark_time - zoo_time).total_seconds() / 60
+                # Saving the results
+                results.append({
+                    'trip_id': trip_id,
+                    'zoo_stop_id': first_zoo['stop_id'],
+                    'zoo_departure': first_zoo['departure_time'],
+                    'toompark_stop_id': first_toompark['stop_id'],
+                    'toompark_arrival': first_toompark['arrival_time'],
+                    'time_diff_minutes': round(time_diff, 2),
+                    'intermediate_stops': first_toompark['stop_sequence'] - first_zoo['stop_sequence'] - 1
+                })
+    
+    return results
+        
 
 def main():
     """
@@ -71,7 +137,8 @@ def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     trips_path = os.path.join(base_dir,'data', 'trips.txt')
     stops_path = os.path.join(base_dir,'data', 'stops.txt')
-
+    stop_times_path = os.path.join(base_dir,'data' ,'stop_times.txt')
+    
     # Check if the file exists
     for file_path in [trips_path, stops_path]:
         if not os.path.exists(file_path):
@@ -85,6 +152,22 @@ def main():
     zoo_stop_ids, toompark_stop_ids = extract_stop_ids(stops_path)
     print(f"Zoo stop IDs: {zoo_stop_ids}")
     print(f"Toompark stop IDs: {toompark_stop_ids}")
+    
+    # # Analyzing trips from Zoo to Toompark
+    print("\nAnalyzing trips from Zoo to Toompark...")
+    results = find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids)
+    
+    # Filtering results, because we are interested only in bus 8
+    filtered_results = [r for r in results if r['trip_id'] in trip_ids]
+    
+    # Print the results
+    print(f"\nFound {len(filtered_results)} trips going from Zoo to Toompark:")
+    for trip in sorted(filtered_results, key=lambda x: x['time_diff_minutes']):
+        print(f"\nTrip ID: {trip['trip_id']}")
+        print(f"Departs Zoo ({trip['zoo_stop_id']}) at {trip['zoo_departure']}")
+        print(f"Arrives Toompark ({trip['toompark_stop_id']}) at {trip['toompark_arrival']}")
+        print(f"Travel time: {trip['time_diff_minutes']} minutes")
+        print(f"Intermediate stops: {trip['intermediate_stops']}")
 
 if __name__ == "__main__":
     main()
