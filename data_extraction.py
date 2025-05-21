@@ -7,7 +7,6 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 """
 import csv
 import os
-from datetime import datetime
 
 
 def filter_trip_ids(file_path):
@@ -153,6 +152,21 @@ def change_gtfs_time(time_str):
     hours, minutes, seconds = map(int, time_str.split(':'))
     total_minutes = hours * 60 + minutes + seconds // 60
     return total_minutes
+
+def sec_to_hhmm(seconds):
+    """Convert seconds since midnight to HH:MM format
+
+    Args:
+        seconds (int): Seconds since midnight
+
+    Returns:
+        str: Time in HH:MM format
+    """
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    # Turning them into integers othwerwise they will be X.0 and ruins the time format
+    return f"{int(hours):02}:{int(minutes):02}"
+
 
 def main():
     """
