@@ -60,7 +60,7 @@ def extract_stop_ids(file_path):
         print(f"File not found: {file_path}")
     return zoo_stop_ids, toompark_stop_ids
 
-def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids):
+def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids, start_min=480, end_min=545):
     """
     Find trips that go from Zoo to Toompark.
     Then calculate their travel time from Zoo to Toompark
