@@ -7,7 +7,6 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 """
 import csv
 import os
-from datetime import datetime
 
 
 def filter_trip_ids(file_path):
@@ -60,7 +59,7 @@ def extract_stop_ids(file_path):
         print(f"File not found: {file_path}")
     return zoo_stop_ids, toompark_stop_ids
 
-def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids):
+def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids, start_min=480, end_min=545):
     """
     Find trips that go from Zoo to Toompark.
     Then calculate their travel time from Zoo to Toompark
@@ -103,18 +102,16 @@ def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids):
         # If there are both Zoo and Toompark stops, we can calculate the time difference
         if zoo_stops and toompark_stops:
             first_zoo = zoo_stops[0]
-            # Toompark stops that come after the first Zoo stop
             subsequent_toompark = [s for s in toompark_stops 
-                                 if s['stop_sequence'] > first_zoo['stop_sequence']]
+                                if s['stop_sequence'] > first_zoo['stop_sequence']]
             
-            if subsequent_toompark:
+            if subsequent_toompark and is_in_time_window(first_zoo['departure_time']):
                 first_toompark = subsequent_toompark[0]
-                # Calculate the time difference
-                time_format = "%H:%M:%S"
-                zoo_time = datetime.strptime(first_zoo['departure_time'], time_format)
-                toompark_time = datetime.strptime(first_toompark['arrival_time'], time_format)
-                time_diff = (toompark_time - zoo_time).total_seconds() / 60
-                # Saving the results
+                
+                zoo_min = change_gtfs_time(first_zoo['departure_time'])
+                toompark_min = change_gtfs_time(first_toompark['arrival_time'])
+                time_diff = toompark_min - zoo_min
+                
                 results.append({
                     'trip_id': trip_id,
                     'zoo_stop_id': first_zoo['stop_id'],
@@ -127,6 +124,49 @@ def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids):
     
     return results
         
+def is_in_time_window(departure_time_str, start_min=480, end_min=545):
+    """
+    Check if the departure time is within the specified time window.
+    
+    Args:
+        departure_time_str (str): Departure time in GTFS format (HH:MM:SS).
+        start_min (int): Start of the time window in minutes since midnight.
+        end_min (int): End of the time window in minutes since midnight.
+    
+    Returns:
+        bool: True if the departure time is within the time window, False otherwise.
+    """
+    departure_time = change_gtfs_time(departure_time_str)
+    return start_min <= departure_time <= end_min
+        
+def change_gtfs_time(time_str):
+    """
+    Change GTFS time format to minutes since midnight.
+    
+    Args:
+        time_str (str): Time string in GTFS format (HH:MM:SS).
+    
+    Returns:
+        int: Corresponding time in minutes since midnight.
+    """
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    total_minutes = hours * 60 + minutes + seconds // 60
+    return total_minutes
+
+def sec_to_hhmm(seconds):
+    """Convert seconds since midnight to HH:MM format
+
+    Args:
+        seconds (int): Seconds since midnight
+
+    Returns:
+        str: Time in HH:MM format
+    """
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    # Turning them into integers othwerwise they will be X.0 and ruins the time format
+    return f"{int(hours):02}:{int(minutes):02}"
+
 
 def main():
     """
@@ -167,7 +207,6 @@ def main():
         print(f"Departs Zoo ({trip['zoo_stop_id']}) at {trip['zoo_departure']}")
         print(f"Arrives Toompark ({trip['toompark_stop_id']}) at {trip['toompark_arrival']}")
         print(f"Travel time: {trip['time_diff_minutes']} minutes")
-        print(f"Intermediate stops: {trip['intermediate_stops']}")
 
 if __name__ == "__main__":
     main()
