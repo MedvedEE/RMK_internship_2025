@@ -7,7 +7,7 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 """
 import csv
 import os
-
+from time_calculations import *
 
 def filter_trip_ids(file_path):
     
@@ -124,61 +124,94 @@ def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids, st
     
     return results
         
-def is_in_time_window(departure_time_str, start_min=450, end_min=545):
-    """
-    Check if the departure time is within the specified time window.
-    
-    Args:
-        departure_time_str (str): Departure time in GTFS format (HH:MM:SS).
-        start_min (int): Start of the time window in minutes since midnight.
-        end_min (int): End of the time window in minutes since midnight.
-    
-    Returns:
-        bool: True if the departure time is within the time window, False otherwise.
-    """
-    departure_time = change_gtfs_time(departure_time_str)
-    return start_min <= departure_time <= end_min
-        
-def change_gtfs_time(time_str):
-    """
-    Change GTFS time format to minutes since midnight.
-    
-    Args:
-        time_str (str): Time string in GTFS format (HH:MM:SS).
-    
-    Returns:
-        int: Corresponding time in minutes since midnight.
-    """
-    hours, minutes, seconds = map(int, time_str.split(':'))
-    total_minutes = hours * 60 + minutes + seconds // 60
-    return total_minutes
 
-def change_gtfs_time_to_seconds(time_str):
-    """
-    Change GTFS time format to seconds since midnight.
+def collect_all_travel_times(data_root):
+    """Collect all travel times from the GTFS data files.
 
     Args:
-        time_str (str): Time string in GTFS format (HH:MM:SS).
-    
+        data_root (str): Path to the root directory containing GTFS data files.
+
     Returns:
-        int: Corresponding time in seconds since midnight.
+        list: A list of all travel times (in minutes) from Zoo to Toompark.
+        dict: A dictionary mapping each day to its corresponding travel times.
     """
-    hours, minutes, seconds = map(int, time_str.split(':'))
-    total_seconds = hours * 3600 + minutes * 60 + seconds
-    return total_seconds
-def sec_to_hhmm(seconds):
-    """Convert seconds since midnight to HH:MM format
+
+    all_durations = []
+    trips_durations_by_day = {}
+    # Loop through each day folder in the data root directory
+    # and process the GTFS data files
+    for folder in sorted(os.listdir(data_root)):
+        # Getting the day path
+        day_path = os.path.join(data_root, folder)
+        # Check if the path is a directory
+        if not os.path.isdir(day_path):
+            continue
+        print(f"Processing day: {folder}")
+        try:
+            # Constructing file paths for trips, stops, and stop_times
+            trips_path = os.path.join(day_path, 'trips.txt')
+            stops_path = os.path.join(day_path, 'stops.txt')
+            stop_times_path = os.path.join(day_path, 'stop_times.txt')
+            
+            # Getting the trip IDs for the day
+            trips_ids = filter_trip_ids(trips_path)
+            # Getting the stop IDs for Zoo and Toompark
+            zoo_ids, toompark_ids = extract_stop_ids(stops_path)
+            # Getting the trips from Zoo to Toompark
+            trips = find_zoo_toompark_trips(stop_times_path, zoo_ids, toompark_ids)
+            # Filtering the trip IDs
+            filtered_trips = [t for t in trips if t['trip_id'] in trips_ids]
+            
+            trips_durations_by_day[folder] = filtered_trips
+            all_durations.extend(filtered_trips)
+        except FileNotFoundError as e:
+            print(f"Failed processing day {folder}: {e}")
+    return all_durations, trips_durations_by_day
+
+
+def compute_lateness_probability(trips, leave_times, meeting_time_sec, walk_to_bus, walk_from_bus):
+    """Compute the probability of being late for a range of departure times.
 
     Args:
-        seconds (int): Seconds since midnight
+        trips (list): List of trip information dictionaries.
+        leave_times (list): List of potential departure times (in seconds).
+        meeting_time_sec (int): Meeting time (in seconds).
+        walk_to_bus (int): Time to walk to the bus stop (in seconds).
+        walk_from_bus (int): Time to walk from the bus stop to the office (in seconds).
 
     Returns:
-        str: Time in HH:MM format
+        list: List of probabilities of being late for each departure time.
     """
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    # Turning them into integers othwerwise they will be X.0 and ruins the time format
-    return f"{int(hours):02}:{int(minutes):02}"
+    probabilities = []
+    for leave_home_at in leave_times:
+        arrive_at_stop = leave_home_at + walk_to_bus
+
+        # Convert GTFS strings to seconds and filter trips
+        available_trips = [
+            {
+                "zoo_departure": change_gtfs_time_to_seconds(t["zoo_departure"]),
+                "arrival_time": change_gtfs_time_to_seconds(t["toompark_arrival"]),
+            }
+            for t in trips
+            if change_gtfs_time_to_seconds(t["zoo_departure"]) >= arrive_at_stop
+        ]
+
+        if not available_trips:
+            probabilities.append(1.0)
+            continue
+
+        late_count = 0
+        # Going through the available trips and checking if they are late
+        # If the arrival time is greater than the meeting time, count it as late
+        for trip in available_trips:
+            arrival_at_office = trip["arrival_time"] + walk_from_bus
+            if arrival_at_office > meeting_time_sec:
+                late_count += 1
+
+        p_late = late_count / len(available_trips)
+        probabilities.append(p_late)
+
+    return probabilities
 
 
 def main():
@@ -220,6 +253,7 @@ def main():
         print(f"Departs Zoo ({trip['zoo_stop_id']}) at {trip['zoo_departure']}")
         print(f"Arrives Toompark ({trip['toompark_stop_id']}) at {trip['toompark_arrival']}")
         print(f"Travel time: {trip['time_diff_minutes']} minutes")
+
 
 if __name__ == "__main__":
     main()
