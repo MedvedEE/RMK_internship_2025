@@ -3,7 +3,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from data_extraction import  sec_to_hhmm, collect_all_travel_times,compute_lateness_probability
+from scripts.data_extraction import  sec_to_hhmm, collect_all_travel_times,compute_lateness_probability
 
 WALK_TO_BUS = 300 # (seconds) 5 min, time to walk to the bus stop
 WALK_FROM_BUS = 240 # (seconds) 4 min, time to walk from the bus stop to the office
@@ -26,6 +26,7 @@ def plot_lateness_probabilities(leave_times, probabilities):
     plt.title("Rita's Probability of Being Late vs. Departure Time")
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig("./images/Graph.png", dpi=300)
     plt.show()
 
 def main():

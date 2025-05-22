@@ -8,7 +8,7 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 import csv
 import os
 import pandas as pd
-from time_calculations import *
+from scripts.time_calculations import *
 
 def filter_trip_ids(file_path):
     
