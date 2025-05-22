@@ -14,22 +14,10 @@ def is_in_time_window(departure_time_str, start_min=450, end_min=545):
     Returns:
         bool: True if the departure time is within the time window, False otherwise.
     """
-    departure_time = change_gtfs_time(departure_time_str)
-    return start_min <= departure_time <= end_min
-        
-def change_gtfs_time(time_str):
-    """
-    Change GTFS time format to minutes since midnight.
-    
-    Args:
-        time_str (str): Time string in GTFS format (HH:MM:SS).
-    
-    Returns:
-        int: Corresponding time in minutes since midnight.
-    """
-    hours, minutes, seconds = map(int, time_str.split(':'))
-    total_minutes = hours * 60 + minutes + seconds // 60
-    return total_minutes
+    time_sec = change_gtfs_time_to_seconds(departure_time_str)
+    return start_min * 60 <= time_sec <= end_min * 60
+
+
 
 def change_gtfs_time_to_seconds(time_str):
     """
@@ -44,6 +32,8 @@ def change_gtfs_time_to_seconds(time_str):
     hours, minutes, seconds = map(int, time_str.split(':'))
     total_seconds = hours * 3600 + minutes * 60 + seconds
     return total_seconds
+
+
 def sec_to_hhmm(seconds):
     """Convert seconds since midnight to HH:MM format
 

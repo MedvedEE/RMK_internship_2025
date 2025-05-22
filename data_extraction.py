@@ -108,10 +108,10 @@ def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids, st
             if subsequent_toompark and is_in_time_window(first_zoo['departure_time']):
                 first_toompark = subsequent_toompark[0]
                 
-                zoo_min = change_gtfs_time(first_zoo['departure_time'])
-                toompark_min = change_gtfs_time(first_toompark['arrival_time'])
-                time_diff = toompark_min - zoo_min
-                
+                zoo_sec = change_gtfs_time_to_seconds(first_zoo['departure_time'])
+                toompark_sec = change_gtfs_time_to_seconds(first_toompark['arrival_time'])
+                time_diff = (toompark_sec - zoo_sec) / 60  # Convert seconds to minutes
+
                 results.append({
                     'trip_id': trip_id,
                     'zoo_stop_id': first_zoo['stop_id'],
