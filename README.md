@@ -50,7 +50,7 @@ When the median time estimate is known, aadditional other calculations can be do
 
 - Using the gathered data, I generated a plot that shows the probability of being late to a meeting based on departure time.
   
-![Result graph](../images/Graph.png)
+![Result graph](./images/Graph.png)
 
 ## Data Sources
 
