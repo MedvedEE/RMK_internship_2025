@@ -124,7 +124,7 @@ def find_zoo_toompark_trips(stop_times_path, zoo_stop_ids, toompark_stop_ids, st
     
     return results
         
-def is_in_time_window(departure_time_str, start_min=480, end_min=545):
+def is_in_time_window(departure_time_str, start_min=450, end_min=545):
     """
     Check if the departure time is within the specified time window.
     
@@ -153,6 +153,19 @@ def change_gtfs_time(time_str):
     total_minutes = hours * 60 + minutes + seconds // 60
     return total_minutes
 
+def change_gtfs_time_to_seconds(time_str):
+    """
+    Change GTFS time format to seconds since midnight.
+
+    Args:
+        time_str (str): Time string in GTFS format (HH:MM:SS).
+    
+    Returns:
+        int: Corresponding time in seconds since midnight.
+    """
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    total_seconds = hours * 3600 + minutes * 60 + seconds
+    return total_seconds
 def sec_to_hhmm(seconds):
     """Convert seconds since midnight to HH:MM format
 
