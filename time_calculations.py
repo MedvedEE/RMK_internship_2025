@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Time-related utility functions for GTFS data analysis.
+"""
+
+
 
 def is_in_time_window(departure_time_str, start_min=450, end_min=545):
     """

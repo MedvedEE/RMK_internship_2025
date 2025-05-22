@@ -7,6 +7,7 @@ It's designed to work with GTFS data files. Currently analyzed data is from Maan
 """
 import csv
 import os
+import pandas as pd
 from time_calculations import *
 
 def filter_trip_ids(file_path):
@@ -20,7 +21,15 @@ def filter_trip_ids(file_path):
         list: A list of trip IDs that match the specified condition.
     """
     matching_trip_ids = []
-    
+    """
+    try:
+        df = pd.read_csv(file_path)
+        matching_trips = df[df['trip_long_name'] == 'Väike-Õismäe - Äigrumäe']
+        return matching_trips['trip_id'].tolist()
+    except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
+        return []
+    """
     # Opening file
     with open(file_path, mode='r', encoding='utf-8') as file:
         reader = csv.DictReader(file)

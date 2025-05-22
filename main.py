@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 from data_extraction import  sec_to_hhmm, collect_all_travel_times,compute_lateness_probability
@@ -39,7 +38,7 @@ def main():
     print(f"Median travel time: {median_dur:.2f} min")
     print(f"Estimated total commute: {total_commute / 60:.2f} min")
 
-    leave_times = list(range(7 * 3600 + 30 * 60, MEETING_TIME_SEC + 1, 5 * 60))  # 07:30 → 09:05
+    leave_times = np.arange(7 * 3600 + 30 * 60, MEETING_TIME_SEC + 1, 5 * 60)  # 07:30 → 09:05
     probs = compute_lateness_probability(trips, leave_times, MEETING_TIME_SEC, WALK_TO_BUS, WALK_FROM_BUS)
     plot_lateness_probabilities(leave_times, probs)
 
