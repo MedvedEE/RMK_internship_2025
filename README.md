@@ -1,5 +1,7 @@
 # RMK_internship_2025
 
+Kaur Kullamäe
+
 ## Overview
 
 This project analyzes public transport GTFS data, to evaluate commute reliability from a starting point, in this case is busstop "Zoo" and to a destination "Toompark".
