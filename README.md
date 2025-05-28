@@ -51,7 +51,8 @@ When the median time estimate is known, aadditional other calculations can be do
 ## Results
 
 - Using the gathered data, I generated a plot that shows the probability of being late to a meeting based on departure time.
-  
+- On average, the median commute time with bus is 12 minutes, taken from multiple days of data.
+- The latest she could leave from home is: 8:44
 ![Result graph](./images/Graph.png)
 
 ## Data Sources
